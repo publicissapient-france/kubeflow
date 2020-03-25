@@ -1,0 +1,317 @@
+"apiVersion": |-
+  argoproj.io/v1alpha1
+"kind": |-
+  Workflow
+"metadata":
+  "annotations":
+    "pipelines.kubeflow.org/pipeline_spec": |-
+      {"description": "A simle test pipeline.", "inputs": [{"default": "1", "name": "a", "optional": true, "type": "Float"}, {"default": "2", "name": "b", "optional": true, "type": "Float"}], "name": "Addition pipeline"}
+  "generateName": |-
+    addition-pipeline-
+"spec":
+  "arguments":
+    "parameters":
+    - "name": |-
+        a
+      "value": |-
+        1
+    - "name": |-
+        b
+      "value": |-
+        2
+  "entrypoint": |-
+    addition-pipeline
+  "serviceAccountName": |-
+    pipeline-runner
+  "templates":
+  - "dag":
+      "tasks":
+      - "arguments":
+          "parameters":
+          - "name": |-
+              a
+            "value": |-
+              {{inputs.parameters.a}}
+        "name": |-
+          summa
+        "template": |-
+          summa
+      - "arguments":
+          "parameters":
+          - "name": |-
+              b
+            "value": |-
+              {{inputs.parameters.b}}
+        "name": |-
+          summa-2
+        "template": |-
+          summa-2
+      - "arguments":
+          "parameters":
+          - "name": |-
+              summa-2-output
+            "value": |-
+              {{tasks.summa-2.outputs.parameters.summa-2-output}}
+          - "name": |-
+              summa-output
+            "value": |-
+              {{tasks.summa.outputs.parameters.summa-output}}
+        "dependencies":
+        - |-
+          summa
+        - |-
+          summa-2
+        "name": |-
+          summa-3
+        "template": |-
+          summa-3
+    "inputs":
+      "parameters":
+      - "name": |-
+          a
+      - "name": |-
+          b
+    "name": |-
+      addition-pipeline
+  - "container":
+      "args":
+      - |-
+        --a
+      - |-
+        {{inputs.parameters.a}}
+      - |-
+        --b
+      - |-
+        10
+      - |-
+        ----output-paths
+      - |-
+        /tmp/outputs/Output/data
+      "command":
+      - |-
+        python3
+      - |-
+        -u
+      - |-
+        -c
+      - |
+        def summa(a , b )  :
+            '''Calculates sum of two arguments'''
+            return a + b
+
+        def _serialize_float(float_value: float) -> str:
+            if isinstance(float_value, str):
+                return float_value
+            if not isinstance(float_value, (float, int)):
+                raise TypeError('Value "{}" has type "{}" instead of float.'.format(str(float_value), str(type(float_value))))
+            return str(float_value)
+
+        import argparse
+        _parser = argparse.ArgumentParser(prog='Summa', description='Calculates sum of two arguments')
+        _parser.add_argument("--a", dest="a", type=float, required=True, default=argparse.SUPPRESS)
+        _parser.add_argument("--b", dest="b", type=float, required=True, default=argparse.SUPPRESS)
+        _parser.add_argument("----output-paths", dest="_output_paths", type=str, nargs=1)
+        _parsed_args = vars(_parser.parse_args())
+        _output_files = _parsed_args.pop("_output_paths", [])
+
+        _outputs = summa(**_parsed_args)
+
+        _outputs = [_outputs]
+
+        _output_serializers = [
+            _serialize_float,
+
+        ]
+
+        import os
+        for idx, output_file in enumerate(_output_files):
+            try:
+                os.makedirs(os.path.dirname(output_file))
+            except OSError:
+                pass
+            with open(output_file, 'w') as f:
+                f.write(_output_serializers[idx](_outputs[idx]))
+      "image": |-
+        python:3.6-slim
+    "inputs":
+      "parameters":
+      - "name": |-
+          a
+    "metadata":
+      "annotations":
+        "pipelines.kubeflow.org/component_spec": |-
+          {"description": "Calculates sum of two arguments", "inputs": [{"name": "a", "type": "Float"}, {"name": "b", "type": "Float"}], "name": "Summa", "outputs": [{"name": "Output", "type": "Float"}]}
+    "name": |-
+      summa
+    "outputs":
+      "artifacts":
+      - "name": |-
+          summa-output
+        "path": |-
+          /tmp/outputs/Output/data
+      "parameters":
+      - "name": |-
+          summa-output
+        "valueFrom":
+          "path": |-
+            /tmp/outputs/Output/data
+  - "container":
+      "args":
+      - |-
+        --a
+      - |-
+        5
+      - |-
+        --b
+      - |-
+        {{inputs.parameters.b}}
+      - |-
+        ----output-paths
+      - |-
+        /tmp/outputs/Output/data
+      "command":
+      - |-
+        python3
+      - |-
+        -u
+      - |-
+        -c
+      - |
+        def summa(a , b )  :
+            '''Calculates sum of two arguments'''
+            return a + b
+
+        def _serialize_float(float_value: float) -> str:
+            if isinstance(float_value, str):
+                return float_value
+            if not isinstance(float_value, (float, int)):
+                raise TypeError('Value "{}" has type "{}" instead of float.'.format(str(float_value), str(type(float_value))))
+            return str(float_value)
+
+        import argparse
+        _parser = argparse.ArgumentParser(prog='Summa', description='Calculates sum of two arguments')
+        _parser.add_argument("--a", dest="a", type=float, required=True, default=argparse.SUPPRESS)
+        _parser.add_argument("--b", dest="b", type=float, required=True, default=argparse.SUPPRESS)
+        _parser.add_argument("----output-paths", dest="_output_paths", type=str, nargs=1)
+        _parsed_args = vars(_parser.parse_args())
+        _output_files = _parsed_args.pop("_output_paths", [])
+
+        _outputs = summa(**_parsed_args)
+
+        _outputs = [_outputs]
+
+        _output_serializers = [
+            _serialize_float,
+
+        ]
+
+        import os
+        for idx, output_file in enumerate(_output_files):
+            try:
+                os.makedirs(os.path.dirname(output_file))
+            except OSError:
+                pass
+            with open(output_file, 'w') as f:
+                f.write(_output_serializers[idx](_outputs[idx]))
+      "image": |-
+        python:3.6-slim
+    "inputs":
+      "parameters":
+      - "name": |-
+          b
+    "metadata":
+      "annotations":
+        "pipelines.kubeflow.org/component_spec": |-
+          {"description": "Calculates sum of two arguments", "inputs": [{"name": "a", "type": "Float"}, {"name": "b", "type": "Float"}], "name": "Summa", "outputs": [{"name": "Output", "type": "Float"}]}
+    "name": |-
+      summa-2
+    "outputs":
+      "artifacts":
+      - "name": |-
+          summa-2-output
+        "path": |-
+          /tmp/outputs/Output/data
+      "parameters":
+      - "name": |-
+          summa-2-output
+        "valueFrom":
+          "path": |-
+            /tmp/outputs/Output/data
+  - "container":
+      "args":
+      - |-
+        --a
+      - |-
+        {{inputs.parameters.summa-output}}
+      - |-
+        --b
+      - |-
+        {{inputs.parameters.summa-2-output}}
+      - |-
+        ----output-paths
+      - |-
+        /tmp/outputs/Output/data
+      "command":
+      - |-
+        python3
+      - |-
+        -u
+      - |-
+        -c
+      - |
+        def summa(a , b )  :
+            '''Calculates sum of two arguments'''
+            return a + b
+
+        def _serialize_float(float_value: float) -> str:
+            if isinstance(float_value, str):
+                return float_value
+            if not isinstance(float_value, (float, int)):
+                raise TypeError('Value "{}" has type "{}" instead of float.'.format(str(float_value), str(type(float_value))))
+            return str(float_value)
+
+        import argparse
+        _parser = argparse.ArgumentParser(prog='Summa', description='Calculates sum of two arguments')
+        _parser.add_argument("--a", dest="a", type=float, required=True, default=argparse.SUPPRESS)
+        _parser.add_argument("--b", dest="b", type=float, required=True, default=argparse.SUPPRESS)
+        _parser.add_argument("----output-paths", dest="_output_paths", type=str, nargs=1)
+        _parsed_args = vars(_parser.parse_args())
+        _output_files = _parsed_args.pop("_output_paths", [])
+
+        _outputs = summa(**_parsed_args)
+
+        _outputs = [_outputs]
+
+        _output_serializers = [
+            _serialize_float,
+
+        ]
+
+        import os
+        for idx, output_file in enumerate(_output_files):
+            try:
+                os.makedirs(os.path.dirname(output_file))
+            except OSError:
+                pass
+            with open(output_file, 'w') as f:
+                f.write(_output_serializers[idx](_outputs[idx]))
+      "image": |-
+        python:3.6-slim
+    "inputs":
+      "parameters":
+      - "name": |-
+          summa-2-output
+      - "name": |-
+          summa-output
+    "metadata":
+      "annotations":
+        "pipelines.kubeflow.org/component_spec": |-
+          {"description": "Calculates sum of two arguments", "inputs": [{"name": "a", "type": "Float"}, {"name": "b", "type": "Float"}], "name": "Summa", "outputs": [{"name": "Output", "type": "Float"}]}
+    "name": |-
+      summa-3
+    "outputs":
+      "artifacts":
+      - "name": |-
+          summa-3-output
+        "path": |-
+          /tmp/outputs/Output/data
